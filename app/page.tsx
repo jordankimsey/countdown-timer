@@ -1,91 +1,168 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from './page.module.css'
-
-const inter = Inter({ subsets: ['latin'] })
+'use client';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
+  const [isEditing, setIsEditing] = useState(true);
+  const [isRunning, setIsRunning] = useState<Boolean | null>(null);
+  const [timer, setTimer] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+  const handleReset = () => {
+    setTimer({ hours: 0, minutes: 0, seconds: 0 });
+    setIsEditing(!isEditing);
+    setIsRunning(null);
+  };
+
+  const handleStart = () => {
+    if (timer.hours !== 0 || timer.minutes !== 0 || timer.seconds !== 0) {
+      setIsRunning(true);
+      setIsEditing(!isEditing);
+    } else {
+      window.alert('Add time');
+    }
+  };
+
+  const handlePause = () => {
+    setIsRunning(!isRunning);
+  };
+
+  //to grant notification permission
+  function notifyMe() {
+    if (!('Notification' in window)) {
+      // Check if the browser supports notifications
+      alert('This browser does not support desktop notification');
+    } else if (Notification.permission === 'denied') {
+      // We need to ask the user for permission
+      Notification.requestPermission().then((permission) => {
+        // If the user accepts, let's create a notification
+        if (permission === 'granted') {
+          const notification = new Notification(
+            'Welcome! You will now recieve notifications for Countdown Timer.'
+          );
+        }
+      });
+    }
+  }
+
+  useEffect(() => {
+    notifyMe();
+  }, []);
+
+  useEffect(() => {
+    let interval: NodeJS.Timer;
+    if (isRunning) {
+      interval = setInterval(() => {
+        if (timer.seconds > 0) {
+          setTimer({ ...timer, seconds: timer.seconds - 1 });
+        } else if (timer.minutes > 0) {
+          setTimer({ ...timer, minutes: timer.minutes - 1, seconds: 59 });
+        } else if (timer.hours > 0) {
+          setTimer({ hours: timer.hours - 1, minutes: 59, seconds: 59 });
+        }
+      }, 1000);
+      if (timer.hours === 0 && timer.minutes === 0 && timer.seconds === 0) {
+        handleReset();
+        if (Notification.permission === 'granted') {
+          new Notification('Timer complete!');
+        } else {
+          alert('Timer Complete!');
+        }
+      }
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, timer.hours, timer.minutes, timer.seconds]);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
+    <main className='flex flex-col items-center justify-center w-screen'>
+      <h1 className='text-3xl font-bold mt-8'>Countdown Timer</h1>
+      <div className='flex justify-center items-center text-center mt-16 w-full'>
+        {isEditing ? (
+          <>
+            <label htmlFor='hours' hidden>
+              hours
+            </label>
+            <input
+              id='hours'
+              type='number'
+              placeholder='HH'
+              className='w-16 border border-black p-1'
+              onChange={(e) =>
+                setTimer({ ...timer, hours: Number(e.target.value) })
+              }
             />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-        <div className={styles.thirteen}>
-          <Image src="/thirteen.svg" alt="13" width={40} height={31} priority />
-        </div>
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+            <p className='px-3'>:</p>
+            <label htmlFor='minutes' hidden>
+              minutes
+            </label>
+            <input
+              id='minutes'
+              type='number'
+              placeholder='MM'
+              className='w-16 border border-black p-1'
+              onChange={(e) =>
+                setTimer({ ...timer, minutes: Number(e.target.value) })
+              }
+            />
+            <p className='px-3'>:</p>
+            <label htmlFor='secounds' hidden>
+              seconds
+            </label>
+            <input
+              id='seconds'
+              type='number'
+              placeholder='SS'
+              className='w-16 border border-black p-1'
+              onChange={(e) =>
+                setTimer({ ...timer, seconds: Number(e.target.value) })
+              }
+            />
+            <div className='ml-3'>
+              <button
+                className='border border-black px-2 py-1'
+                onClick={handleStart}
+              >
+                Start
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className='w-14 p-1'>
+              {timer.hours.toLocaleString('en-US', {
+                minimumIntegerDigits: 2,
+                useGrouping: false,
+              })}
+            </p>
+            <p>:</p>
+            <p className='w-14 p-1'>
+              {timer.minutes.toLocaleString('en-US', {
+                minimumIntegerDigits: 2,
+                useGrouping: false,
+              })}
+            </p>
+            <p>:</p>
+            <p className='w-14 p-1'>
+              {timer.seconds.toLocaleString('en-US', {
+                minimumIntegerDigits: 2,
+                useGrouping: false,
+              })}
+            </p>
+            <div className='flex items-center'>
+              <button
+                className='border border-black px-2 py-1'
+                onClick={handlePause}
+              >
+                {isRunning ? 'Pause' : 'Resume'}
+              </button>
+              <button
+                className='border border-black px-2 py-1 ml-2'
+                onClick={handleReset}
+              >
+                Reset
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </main>
-  )
+  );
 }
